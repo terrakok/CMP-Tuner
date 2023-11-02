@@ -5,7 +5,7 @@ agp = "8.1.2"
 compose = "1.5.10"
 androidx-appcompat = "1.6.1"
 androidx-activityCompose = "1.7.2"
-compose-uitooling = "1.5.10"
+compose-uitooling = "1.5.1"
 napier = "2.6.1"
 kotlinx-coroutines = "1.7.3"
 atomicfu = "0.22.0"
@@ -24,5 +24,6 @@ kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "a
 [plugins]
 
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinx-atomicfu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "kotlin" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 android-application = { id = "com.android.application", version.ref = "agp" }
