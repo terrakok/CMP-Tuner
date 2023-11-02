@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.random.Random
 
 interface FrequencyDetector {
     /**
@@ -31,7 +32,7 @@ class StubFrequencyDetector : FrequencyDetector {
     override fun frequencies(): Flow<Float> = flow {
         while (true) {
             waitForStarted()
-            emit(E4_FREQUENCY)
+            emit(E4_FREQUENCY + Random.nextInt(-50, 50))
             delay(EMIT_INTERVAL_MS_LONG)
         }
     }
@@ -39,7 +40,7 @@ class StubFrequencyDetector : FrequencyDetector {
     private suspend fun waitForStarted() {
         // Acquire the lock, suspending until it's available, then immediately release it.
         // The lock is only available when `startDetector` has been called.
-        mutex.withLock {  }
+        mutex.withLock { }
     }
 
     override suspend fun startDetector() {

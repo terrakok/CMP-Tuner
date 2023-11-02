@@ -1,113 +1,140 @@
 package org.jetbrains.tuner
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.jetbrains.tuner.frequency.StubFrequencyDetector
 import org.jetbrains.tuner.theme.AppTheme
-import org.jetbrains.tuner.theme.LocalThemeIsDark
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 internal fun App() = AppTheme {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisibility by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-
-        Row(
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Login",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-
-            Spacer(modifier = Modifier.weight(1.0f))
-
-            var isDark by LocalThemeIsDark.current
-            IconButton(
-                onClick = { isDark = !isDark }
-            ) {
-                Icon(
-                    modifier = Modifier.padding(8.dp).size(20.dp),
-                    imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = null
-                )
-            }
+    var freq by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        val detector = StubFrequencyDetector()
+        launch {
+            detector.frequencies().collect { freq = it }
         }
+        detector.startDetector()
+    }
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+    Column {
+        Text("Freq=$freq")
+
+        Freqometr(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            angle = 80f,
+            min = 200f,
+            max = 500f,
+            current = freq,
+            tickNumber = 61
         )
+    }
+}
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            singleLine = true,
-            visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password
-            ),
-            trailingIcon = {
-                IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                    val imageVector = if (passwordVisibility) Icons.Default.Close else Icons.Default.Edit
-                    Icon(imageVector, contentDescription = if (passwordVisibility) "Hide password" else "Show password")
+@Composable
+private fun Freqometr(
+    modifier: Modifier = Modifier,
+    angle: Float,
+    min: Float,
+    max: Float,
+    current: Float,
+    tickNumber: Int,
+    tickColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Canvas(modifier) {
+        scale(
+            angle = angle,
+            tickNumber = tickNumber,
+            tickColor = tickColor,
+            getTickHeight = { index ->
+                when {
+                    index % 10 == 0 -> 24.dp
+                    index % 5 == 0 -> 16.dp
+                    else -> 8.dp
                 }
             }
         )
-
-        Button(
-            onClick = { /* Handle login logic here */ },
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Text("Login")
-        }
-
-        TextButton(
-            onClick = { openUrl("https://github.com/terrakok") },
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Text("Open github")
-        }
+        val delta = (angle * current / (min + max)) - (angle / 2)
+        arrow(
+            delta = delta,
+            arrowColor = tickColor
+        )
     }
+}
+
+private fun DrawScope.scale(
+    angle: Float,
+    tickNumber: Int,
+    tickColor: Color = Color.Black,
+    tickWidth: Dp = 2.dp,
+    getTickHeight: (Int) -> Dp = { 16.dp }
+) {
+    val radius = size.height
+    val scaleCenterX = center.x
+    val scaleCenterY = size.height
+
+    val tickStepAngle = angle / (tickNumber - 1)
+    val rotation = 90 - (angle / 2f)
+
+    repeat(tickNumber) { tick ->
+        val tickHeight = getTickHeight(tick).toPx()
+        val tickAngle = tickStepAngle * tick
+        val stepsStartOffset = Offset(
+            x = scaleCenterX + (radius * cos((tickAngle + rotation) * (PI / 180f))).toFloat(),
+            y = scaleCenterY - (radius * sin((tickAngle + rotation) * (PI / 180))).toFloat()
+        )
+        val stepsEndOffset = Offset(
+            x = scaleCenterX + (radius - tickHeight) * cos((tickAngle + rotation) * (PI / 180)).toFloat(),
+            y = scaleCenterY - (radius - tickHeight) * sin((tickAngle + rotation) * (PI / 180)).toFloat()
+        )
+        drawLine(
+            color = tickColor,
+            start = stepsStartOffset,
+            end = stepsEndOffset,
+            strokeWidth = tickWidth.toPx(),
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+
+private fun DrawScope.arrow(
+    delta: Float,
+    arrowColor: Color = Color.Black,
+    arrowWidth: Dp = 2.dp
+) {
+    val radius = size.height
+    val scaleCenterX = center.x
+    val scaleCenterY = size.height
+    val rotation = 90
+
+    val start = Offset(scaleCenterX, scaleCenterY)
+    val end = Offset(
+        x = scaleCenterX + (radius * cos((-delta + rotation) * (PI / 180f))).toFloat(),
+        y = scaleCenterY - (radius * sin((-delta + rotation) * (PI / 180))).toFloat()
+    )
+    drawLine(
+        color = arrowColor,
+        start = start,
+        end = end,
+        strokeWidth = arrowWidth.toPx(),
+        cap = StrokeCap.Round
+    )
 }
 
 internal expect fun openUrl(url: String?)
