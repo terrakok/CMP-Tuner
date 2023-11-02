@@ -9,17 +9,25 @@ import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.DataLine
+import javax.sound.sampled.TargetDataLine
+
 
 actual fun createDefaultFrequencyDetector(): FrequencyDetector = RealFrequencyDetector()
 
-class RealFrequencyDetector : FrequencyDetector {
-    private val format = AudioFormat(44100f, 16, 1, true, false)
-    private val defaultMixer = (AudioSystem.getMixerInfo().firstOrNull { it.toString().contains("WEBCAM") }).also {
-            println("Mixed = $it")
+class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
+
+    companion object {
+        private const val SAMPLE_RATE = 44100f
+        private const val DEFAULT_FFT_SIZE = 4096
+        private const val DEFAULT_PROCESSING_DELAY_MS = 100L
     }
 
-    private val line = AudioSystem.getTargetDataLine(format, defaultMixer).apply {
-        open(format)
+    private val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+
+    private val info: DataLine.Info = DataLine.Info(TargetDataLine::class.java, format)
+    private val line: TargetDataLine = (AudioSystem.getLine(info) as TargetDataLine).apply {
+        open(format, DEFAULT_FFT_SIZE)
     }
     private val fft = FastFourierTransformer(DftNormalization.STANDARD)
     private val frequencies = MutableSharedFlow<Float?>()
@@ -35,19 +43,25 @@ class RealFrequencyDetector : FrequencyDetector {
         stopDetector()
         detectorJob = CoroutineScope(Dispatchers.IO).launch {
             line.start()
-            var bufferSize = 4096//line.bufferSize
-            var power = 1
-            while (power < bufferSize) power *= 2
-            val buffer = ByteArray(power)
+            val buffer = ByteArray(DEFAULT_FFT_SIZE)
             while (isActive) {
-                val numBytesRead = line.read(buffer, 0, bufferSize)
-                println("numBytesRead = $numBytesRead")
-                if (numBytesRead > 0) {
-                    val samples = buffer.map { it.toDouble() }.toDoubleArray()
-                    println("Samples size = ${samples.size}")
-                    val complexData = fft.transform(samples, TransformType.FORWARD)
-                    val frequency = computeFrequency(complexData)
-                    frequencies.emit(frequency)
+                val numBytesRead = line.read(buffer, 0, buffer.size)
+
+                if (numBytesRead <= 0) continue
+
+                val micBufferData = DoubleArray(numBytesRead / 2) { i ->
+                    val index = i * 2
+                    val audioSample = (buffer[index].toInt() shl 8) or (buffer[index + 1].toInt() and 0xFF)
+                    audioSample / 32768.0 // Normalized between -1.0 and 1.0
+                }
+
+                val complexData = fft.transform(micBufferData, TransformType.FORWARD)
+                val result = calculateFrequencies(complexData)
+                val fundamentalFrequency = findFundamentalFreq(result, SAMPLE_RATE, DEFAULT_FFT_SIZE)
+                frequencies.emit(fundamentalFrequency)
+
+                if (verbose) {
+                    println("F = $fundamentalFrequency")
                 }
             }
         }
@@ -58,25 +72,13 @@ class RealFrequencyDetector : FrequencyDetector {
         detectorJob?.cancelAndJoin()
     }
 
-    private fun computeFrequency(data: Array<Complex>): Float? {
-        var maxAmp = 0.0
-        var maxIndex = -1
-
-        for (i in 1 until data.size / 2) {
-            val real = data[i].real
-            val imaginary = data[i].imaginary
-            val magnitude = Math.sqrt(real * real + imaginary * imaginary)
-
-            if (magnitude > maxAmp) {
-                maxAmp = magnitude
-                maxIndex = i
-            }
-        }
-
-        return if (maxIndex >= 0) computeFrequencyForIndex(maxIndex).toFloat() else null
+    private fun calculateFrequencies(complexTransformed: Array<Complex>): DoubleArray {
+        return complexTransformed.map { it.abs() }.toDoubleArray()
     }
 
-    private fun computeFrequencyForIndex(index: Int): Double {
-        return index.toDouble() * format.sampleRate.toDouble() / line.bufferSize.toDouble()
+    @Suppress("SameParameterValue")
+    private fun findFundamentalFreq(frequencies: DoubleArray, sampleRate: Float, bufferSize: Int): Float {
+        val maxIndex = frequencies.indices.maxByOrNull { frequencies[it] } ?: 0
+        return maxIndex * (sampleRate / bufferSize)
     }
 }
