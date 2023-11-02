@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.jetbrains.tuner.frequency.StubFrequencyDetector
+import org.jetbrains.tuner.frequency.createDefaultFrequencyDetector
 import org.jetbrains.tuner.theme.AppTheme
 import kotlin.math.PI
 import kotlin.math.cos
@@ -25,9 +26,9 @@ import kotlin.math.sin
 internal fun App() = AppTheme {
     var freq by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
-        val detector = StubFrequencyDetector()
+        val detector = createDefaultFrequencyDetector()
         launch {
-            detector.frequencies().collect { freq = it }
+            detector.frequencies().collect { freq = it ?: 0f }
         }
         detector.startDetector()
     }

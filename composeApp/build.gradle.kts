@@ -74,6 +74,8 @@ kotlin {
                 implementation(compose.desktop.common)
                 implementation(compose.desktop.currentOs)
                 implementation(libs.apache.commons.math)
+                implementation(libs.tarsos.dsp.core)
+                implementation(libs.tarsos.dsp.jvm)
             }
         }
 
