@@ -50,13 +50,19 @@ kotlin {
                 implementation(compose.components.resources)
                 implementation(libs.napier)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.atomicfu)
             }
         }
 
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
             }
+        }
+
+        val jsTest by getting {
+            dependsOn(commonTest)
         }
 
         val androidMain by getting {
