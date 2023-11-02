@@ -53,12 +53,18 @@ class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
                     val index = i * 2
                     val audioSample = (buffer[index].toInt() shl 8) or (buffer[index + 1].toInt() and 0xFF)
                     audioSample / 32768.0 // Normalized between -1.0 and 1.0
+                }.let {
+                    lowPassFilter(it)
                 }
 
                 val complexData = fft.transform(micBufferData, TransformType.FORWARD)
                 val result = calculateFrequencies(complexData)
                 val fundamentalFrequency = findFundamentalFreq(result, SAMPLE_RATE, DEFAULT_FFT_SIZE)
-                frequencies.emit(fundamentalFrequency)
+
+                if (fundamentalFrequency > 0f) {
+                    // Let's skip 0Hz for now
+                    frequencies.emit(fundamentalFrequency)
+                }
 
                 if (verbose) {
                     println("F = $fundamentalFrequency")
@@ -80,5 +86,24 @@ class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
     private fun findFundamentalFreq(frequencies: DoubleArray, sampleRate: Float, bufferSize: Int): Float {
         val maxIndex = frequencies.indices.maxByOrNull { frequencies[it] } ?: 0
         return maxIndex * (sampleRate / bufferSize)
+    }
+
+    // A primitive low pass filter. Try something advanced. Look at TarsosDSP lib
+    // cutoffFrequency default is 2kHz - should be enough for a guitar tuner
+    private fun lowPassFilter(signal: DoubleArray, cutoffFrequency: Double = 2000.0, sampleRate: Float = SAMPLE_RATE): DoubleArray {
+        val rc = 1.0 / (cutoffFrequency * 2 * Math.PI)
+        val dt = 1.0 / sampleRate
+        val alpha = dt / (rc + dt)
+
+        var previousFilteredValue = signal[0]
+        val filteredSignal = DoubleArray(signal.size)
+
+        signal.forEachIndexed { index, value ->
+            val currentFilteredValue = alpha * value + (1 - alpha) * previousFilteredValue
+            filteredSignal[index] = currentFilteredValue
+            previousFilteredValue = currentFilteredValue
+        }
+
+        return filteredSignal
     }
 }

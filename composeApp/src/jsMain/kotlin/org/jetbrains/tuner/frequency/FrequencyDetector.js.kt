@@ -57,7 +57,7 @@ class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
                 if (verbose) {
                     println("Peak frequency: ${maxFrequency.toFixed(2)} Hz")
                 }
-                console.log(dataArray)
+                // console.log(dataArray)
 
                 frequencies.emit(maxFrequency.toFloat())
 
