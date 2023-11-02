@@ -15,13 +15,5 @@ fun main() = application {
     ) {
         window.minimumSize = Dimension(350, 600)
         App()
-
-        LaunchedEffect(Unit) {
-            val fd = createDefaultFrequencyDetector()
-            fd.startDetector()
-            fd.frequencies().collect {
-                println(it)
-            }
-        }
     }
 }

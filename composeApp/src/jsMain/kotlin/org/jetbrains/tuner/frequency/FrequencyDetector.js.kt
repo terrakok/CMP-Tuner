@@ -5,8 +5,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.get
 import org.w3c.dom.mediacapture.MediaStream
 import org.w3c.dom.mediacapture.MediaStreamConstraints
 
@@ -17,7 +17,7 @@ class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
 
     companion object {
         private const val DEFAULT_PROCESSING_DELAY_MS = 100L
-        private const val DEFAULT_FFT_SIZE = 2048
+        private const val DEFAULT_FFT_SIZE = 8192
     }
 
     private val frequencies = MutableSharedFlow<Float?>()
@@ -31,35 +31,32 @@ class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
             console.log("Error accessing the microphone", t)
             throw t
         }
-        // Create an AudioContext
         val audioCtx = AudioContext()
 
-        // Create an AudioNode from the stream
-        val source = audioCtx.createMediaStreamSource(stream)
 
         // Create an AnalyserNode
-        val analyser = audioCtx.createAnalyser()
-        analyser.fftSize = DEFAULT_FFT_SIZE
-        val bufferLength = analyser.frequencyBinCount
-        val dataArray = Uint8Array(bufferLength.toInt())
+        val analyser = audioCtx.createAnalyser().apply {
+            fftSize = DEFAULT_FFT_SIZE
+        }
+        val dataArray = Float32Array(analyser.fftSize.toInt())
 
-        // Connect the source to the analyser
+        val source = audioCtx.createMediaStreamSource(stream)
         source.connect(analyser)
 
         detectorJob = CoroutineScope(Dispatchers.Default).launch {
             while (isActive) {
-                analyser.getByteFrequencyData(dataArray)
+                analyser.getFloatTimeDomainData(dataArray)
 
-                // Find the peak frequency
-                val maxIndex = dataArray.maxIndex()
-                val maxFrequency = maxIndex * (audioCtx.sampleRate.toDouble() / analyser.fftSize.toDouble())
+                val maxFrequency = yin(dataArray, audioCtx.sampleRate)
 
                 if (verbose) {
-                    println("Peak frequency: ${maxFrequency.toFixed(2)} Hz")
+                    println("Peak frequency: $maxFrequency Hz")
                 }
-                // console.log(dataArray)
 
-                frequencies.emit(maxFrequency.toFloat())
+                val isValid = js("!isNaN(maxFrequency)") as Boolean
+                if (isValid) {
+                    frequencies.emit(maxFrequency)
+                }
 
                 delay(DEFAULT_PROCESSING_DELAY_MS)
             }
@@ -84,27 +81,15 @@ private external interface MediaStreamAudioSourceNode {
 
 private external interface AnalyserNode {
     var fftSize: Number
-    val frequencyBinCount: Number
+    val frequencyBinCount: Int
 
     /**
-     * See https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData
+     * See https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getFloatTimeDomainData
      */
+    fun getFloatTimeDomainData(array: Float32Array)
+
     fun getByteFrequencyData(array: Uint8Array)
+    fun getFloatFrequencyData(array: Float32Array)
 }
 
-// Since `toFixed` is not a standard Kotlin function, we create an extension function for Double
-private fun Double.toFixed(digits: Int): String = asDynamic().toFixed(digits) as String
-
-@JsName("maxIndexFun")
-private fun Uint8Array.maxIndex(): Int {
-    var mIx = 0
-    var maxValue = 0
-    for (i in (0 until this.length)) {
-        val v = this[i].toInt()
-        if (v > maxValue) {
-            maxValue = v
-            mIx = i
-        }
-    }
-    return mIx
-}
+private external fun yin(data: Float32Array, sampleRate: Number): Float

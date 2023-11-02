@@ -17,7 +17,7 @@ class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
 
     companion object {
         private const val SAMPLE_RATE = 44100f
-        private const val DEFAULT_FFT_SIZE = 4096
+        private const val DEFAULT_FFT_SIZE = 8192
     }
 
     private var line: TargetDataLine? = null

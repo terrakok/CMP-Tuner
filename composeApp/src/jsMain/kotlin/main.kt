@@ -10,14 +10,6 @@ fun main() {
     onWasmReady {
         CanvasBasedWindow("CMP-Tuner") {
             App()
-
-            LaunchedEffect(Unit) {
-                val fd = createDefaultFrequencyDetector()
-                fd.startDetector()
-                fd.frequencies().collect {
-                    println("F = $it")
-                }
-            }
         }
     }
 }
