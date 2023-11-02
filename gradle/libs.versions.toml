@@ -9,6 +9,7 @@ compose-uitooling = "1.5.1"
 napier = "2.6.1"
 kotlinx-coroutines = "1.7.3"
 atomicfu = "0.22.0"
+apache-commons-math = "3.6.1"
 
 [libraries]
 
@@ -20,6 +21,7 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
 kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
+apache-commons-math = { module = "org.apache.commons:commons-math3", version.ref = "apache-commons-math" }
 
 [plugins]
 

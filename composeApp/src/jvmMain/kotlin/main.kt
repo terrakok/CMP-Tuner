@@ -1,9 +1,11 @@
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import java.awt.Dimension
 import org.jetbrains.tuner.App
+import org.jetbrains.tuner.frequency.createDefaultFrequencyDetector
 
 fun main() = application {
     Window(
@@ -13,5 +15,13 @@ fun main() = application {
     ) {
         window.minimumSize = Dimension(350, 600)
         App()
+
+        LaunchedEffect(Unit) {
+            val fd = createDefaultFrequencyDetector()
+            fd.startDetector()
+            fd.frequencies().collect {
+                println(it)
+            }
+        }
     }
 }

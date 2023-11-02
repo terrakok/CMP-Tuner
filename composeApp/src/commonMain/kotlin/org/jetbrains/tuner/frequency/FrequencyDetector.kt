@@ -18,6 +18,8 @@ interface FrequencyDetector {
     suspend fun stopDetector()
 }
 
+expect fun createDefaultFrequencyDetector(): FrequencyDetector
+
 class StubFrequencyDetector : FrequencyDetector {
     companion object {
         // The frequency of E4 note in Hz
