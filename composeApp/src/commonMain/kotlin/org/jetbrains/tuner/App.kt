@@ -73,7 +73,12 @@ internal fun App() = AppTheme {
         ) {
             val delta = remember(freq, selectedTone) {
                 val ideal = selectedTone.frequency
-                freq - ideal
+                val d = freq - ideal
+                when {
+                    d in -80f..80f -> d
+                    d < -80f -> -80f
+                    else -> 80f
+                }
             }
             Freqometr(
                 modifier = Modifier
@@ -90,7 +95,10 @@ internal fun App() = AppTheme {
                 },
                 style = MaterialTheme.typography.displayMedium
             )
-            Text(text = "$freq Hz")
+            val fText = freq.toString().split('.').let {
+                it.first() + "." + (it.getOrNull(1) ?: "0").take(2)
+            }
+            Text(text = "$fText Hz")
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
