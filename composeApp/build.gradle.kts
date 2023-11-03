@@ -40,54 +40,42 @@ kotlin {
                 optIn("org.jetbrains.compose.resources.ExperimentalResourceApi")
             }
         }
-        commonMain {
-            dependencies {
-                implementation(compose.runtime)
-                implementation(compose.material3)
-                implementation(compose.materialIconsExtended)
-                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-                implementation(compose.components.resources)
-                implementation(libs.napier)
-                implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.atomicfu)
-            }
+        commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.components.resources)
+            implementation(libs.napier)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.atomicfu)
         }
 
-        commonTest {
-            dependencies {
-                implementation(kotlin("test"))
-                implementation(libs.kotlinx.coroutines.test)
-            }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
         }
 
-        androidMain {
-            dependencies {
-                implementation(libs.androidx.appcompat)
-                implementation(libs.androidx.activityCompose)
-                implementation(libs.compose.uitooling)
-                implementation(libs.kotlinx.coroutines.android)
-            }
+        androidMain.dependencies {
+            implementation(libs.androidx.appcompat)
+            implementation(libs.androidx.activityCompose)
+            implementation(libs.compose.uitooling)
+            implementation(libs.kotlinx.coroutines.android)
         }
 
-        jvmMain {
-            dependencies {
-                implementation(compose.desktop.common)
-                implementation(compose.desktop.currentOs)
-                implementation(libs.apache.commons.math)
-                implementation(libs.tarsos.dsp.core)
-                implementation(libs.tarsos.dsp.jvm)
-            }
+        jvmMain.dependencies {
+            implementation(compose.desktop.common)
+            implementation(compose.desktop.currentOs)
+            implementation(libs.apache.commons.math)
+            implementation(libs.tarsos.dsp.core)
+            implementation(libs.tarsos.dsp.jvm)
         }
 
-        jsMain {
-            dependencies {
-                implementation(compose.html.core)
-            }
+        jsMain.dependencies {
+            implementation(compose.html.core)
         }
 
-        iosMain {
-            dependencies {
-            }
+        iosMain.dependencies {
         }
 
     }
