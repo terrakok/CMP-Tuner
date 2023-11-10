@@ -10,14 +10,15 @@ import org.khronos.webgl.Uint8Array
 import org.w3c.dom.mediacapture.MediaStream
 import org.w3c.dom.mediacapture.MediaStreamConstraints
 
-actual fun createDefaultFrequencyDetector(): FrequencyDetector = RealFrequencyDetector()
+actual fun createFrequencyDetector(): FrequencyDetector = JsFrequencyDetector()
 
-
-class RealFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
+private class JsFrequencyDetector(
+    private val verbose: Boolean = false
+) : FrequencyDetector {
 
     companion object {
-        private const val DEFAULT_PROCESSING_DELAY_MS = 100L
-        private const val DEFAULT_FFT_SIZE = 8192
+        const val DEFAULT_PROCESSING_DELAY_MS = 100L
+        const val DEFAULT_FFT_SIZE = 8192
     }
 
     private val frequencies = MutableSharedFlow<Float?>()

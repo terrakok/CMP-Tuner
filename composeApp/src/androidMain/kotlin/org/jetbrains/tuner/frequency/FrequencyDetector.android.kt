@@ -1,27 +1,27 @@
 package org.jetbrains.tuner.frequency
 
-import be.tarsos.dsp.AudioDispatcher
-import be.tarsos.dsp.io.jvm.JVMAudioInputStream
+import be.tarsos.dsp.io.android.AudioDispatcherFactory
 import be.tarsos.dsp.pitch.PitchDetectionHandler
 import be.tarsos.dsp.pitch.PitchProcessor
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import javax.sound.sampled.*
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
-actual fun createFrequencyDetector(): FrequencyDetector = JvmFrequencyDetector()
 
-private class JvmFrequencyDetector(
-    private val verbose: Boolean = false
-) : FrequencyDetector {
+actual fun createFrequencyDetector(): FrequencyDetector = AndroidFrequencyDetector()
+
+private class AndroidFrequencyDetector(val verbose: Boolean = false) : FrequencyDetector {
 
     companion object {
-        const val SAMPLE_RATE = 44100f
+        const val SAMPLE_RATE = 44100
         const val DEFAULT_FFT_SIZE = 8192
     }
-
-    private var line: TargetDataLine? = null
 
     private val frequencies = MutableSharedFlow<Float?>(
         onBufferOverflow = BufferOverflow.DROP_OLDEST, extraBufferCapacity = 1
@@ -33,19 +33,11 @@ private class JvmFrequencyDetector(
     override suspend fun startDetector() {
         stopDetector()
 
-        val format = AudioFormat(SAMPLE_RATE, 16, 1, true, true)
-        val info: DataLine.Info = DataLine.Info(TargetDataLine::class.java, format)
-
-        line = (AudioSystem.getLine(info) as TargetDataLine)
-        val line = line!!
-
-        line.open(format, DEFAULT_FFT_SIZE)
-        line.start()
-
-        val stream = AudioInputStream(line)
-        val audioStream = JVMAudioInputStream(stream)
-        val dispatcher = AudioDispatcher(audioStream, DEFAULT_FFT_SIZE, 0)
-
+        val dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(
+            SAMPLE_RATE,
+            DEFAULT_FFT_SIZE,
+            0
+        )
         val resultHandler = PitchDetectionHandler { pitchDetectionResult, _ ->
             if (pitchDetectionResult.pitch != -1f) {
                 if (verbose) {
@@ -54,10 +46,14 @@ private class JvmFrequencyDetector(
                 frequencies.tryEmit(pitchDetectionResult.pitch)
             }
         }
-
-        dispatcher.addAudioProcessor(
-            PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.YIN, SAMPLE_RATE, DEFAULT_FFT_SIZE, resultHandler)
+        val pitchProcessor = PitchProcessor(
+            PitchProcessor.PitchEstimationAlgorithm.YIN,
+            SAMPLE_RATE.toFloat(),
+            DEFAULT_FFT_SIZE,
+            resultHandler
         )
+
+        dispatcher.addAudioProcessor(pitchProcessor)
 
         detectorJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
@@ -67,7 +63,6 @@ private class JvmFrequencyDetector(
     }
 
     override suspend fun stopDetector() {
-        line?.stop()
         detectorJob?.cancelAndJoin()
     }
 }

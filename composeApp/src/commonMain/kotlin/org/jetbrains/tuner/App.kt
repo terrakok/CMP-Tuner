@@ -1,8 +1,6 @@
 package org.jetbrains.tuner
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
@@ -20,8 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.jetbrains.tuner.frequency.StubFrequencyDetector
-import org.jetbrains.tuner.frequency.createDefaultFrequencyDetector
+import org.jetbrains.tuner.frequency.createFrequencyDetector
 import org.jetbrains.tuner.theme.AppTheme
 import kotlin.math.PI
 import kotlin.math.cos
@@ -56,7 +53,7 @@ internal fun App() = AppTheme {
     var selectedTone by remember { mutableStateOf(instrument.tones.first()) }
 
     LaunchedEffect(Unit) {
-        val detector = createDefaultFrequencyDetector()
+        val detector = createFrequencyDetector()
         launch {
             detector.frequencies().collect { freq = it ?: 0f }
         }
@@ -125,26 +122,6 @@ internal fun App() = AppTheme {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ToneView(
-    tone: Tone,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-            text = tone.name,
-            textAlign = TextAlign.Center
-        )
-        Divider(Modifier.fillMaxWidth())
-        Divider(Modifier.fillMaxHeight())
     }
 }
 

@@ -61,6 +61,9 @@ kotlin {
             implementation(libs.androidx.activityCompose)
             implementation(libs.compose.uitooling)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.accompanist.permissions)
+            //https://0110.be/posts/TarsosDSP_on_Android_-_Audio_Processing_in_Java_on_Android
+            implementation(files(projectDir.resolve("jarLibs/TarsosDSP-Android-2.0.jar")))
         }
 
         jvmMain.dependencies {

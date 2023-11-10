@@ -4,18 +4,20 @@ kotlin = "1.9.20"
 agp = "8.1.2"
 compose = "1.5.10"
 androidx-appcompat = "1.6.1"
-androidx-activityCompose = "1.7.2"
-compose-uitooling = "1.5.1"
+androidx-activityCompose = "1.8.0"
+compose-uitooling = "1.5.4"
 napier = "2.6.1"
 kotlinx-coroutines = "1.7.3"
 atomicfu = "0.22.0"
 apache-commons-math = "3.6.1"
 tarsos-dsp = "2.5"
+accompanist-permissions = "0.33.2-alpha"
 
 [libraries]
 
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist-permissions" }
 compose-uitooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose-uitooling" }
 napier = { module = "io.github.aakira:napier", version.ref = "napier" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
@@ -23,8 +25,8 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
 kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 apache-commons-math = { module = "org.apache.commons:commons-math3", version.ref = "apache-commons-math" }
-tarsos-dsp-core = { module = "be.tarsos.dsp:core", version.ref = "tarsos.dsp" }
-tarsos-dsp-jvm = { module = "be.tarsos.dsp:jvm", version.ref = "tarsos.dsp" }
+tarsos-dsp-core = { module = "be.tarsos.dsp:core", version.ref = "tarsos-dsp" }
+tarsos-dsp-jvm = { module = "be.tarsos.dsp:jvm", version.ref = "tarsos-dsp" }
 
 [plugins]
 
