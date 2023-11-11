@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlinx.atomicfu)
 }
 
 kotlin {
@@ -48,7 +47,6 @@ kotlin {
             implementation(compose.components.resources)
             implementation(libs.napier)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.atomicfu)
         }
 
         commonTest.dependencies {
