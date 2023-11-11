@@ -17,8 +17,7 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import org.jetbrains.tuner.frequency.createFrequencyDetector
+import org.jetbrains.tuner.frequency.getMicFrequency
 import org.jetbrains.tuner.theme.AppTheme
 import kotlin.math.PI
 import kotlin.math.cos
@@ -53,11 +52,7 @@ internal fun App() = AppTheme {
     var selectedTone by remember { mutableStateOf(instrument.tones.first()) }
 
     LaunchedEffect(Unit) {
-        val detector = createFrequencyDetector()
-        launch {
-            detector.frequencies().collect { freq = it ?: 0f }
-        }
-        detector.startDetector()
+        getMicFrequency().collect { freq = it }
     }
 
     Box(
