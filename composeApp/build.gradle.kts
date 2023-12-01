@@ -47,6 +47,7 @@ kotlin {
             implementation(compose.components.resources)
             implementation(libs.napier)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.materialKolor)
         }
 
         commonTest.dependencies {
@@ -55,9 +56,10 @@ kotlin {
         }
 
         androidMain.dependencies {
+            implementation(compose.uiTooling)
+            implementation(compose.preview)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.activityCompose)
-            implementation(libs.compose.uitooling)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.accompanist.permissions)
             //https://0110.be/posts/TarsosDSP_on_Android_-_Audio_Processing_in_Java_on_Android
@@ -67,7 +69,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.common)
             implementation(compose.desktop.currentOs)
-            implementation(libs.apache.commons.math)
+            implementation(compose.uiTooling)
+            implementation(compose.preview)
             implementation(libs.tarsos.dsp.core)
             implementation(libs.tarsos.dsp.jvm)
         }
@@ -98,6 +101,12 @@ android {
         manifest.srcFile("src/androidMain/AndroidManifest.xml")
         res.srcDirs("src/androidMain/resources")
         resources.srcDirs("src/commonMain/resources")
+    }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.4"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

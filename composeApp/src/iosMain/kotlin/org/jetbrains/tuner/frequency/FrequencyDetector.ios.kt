@@ -109,7 +109,7 @@ private fun ProducerScope<Float>.processAudioBuffer(buffer: AVAudioPCMBuffer?) {
         vDSP_maxvi(magnitude, 1, maxFrequencyMagnitude.ptr, maxFrequencyIndex.ptr, nOver2)
 
         val frequency = (maxFrequencyIndex.value.toFloat() / nOver2.toFloat()) * nyquistMaxFreq
-        trySendBlocking(frequency)
+        trySend(frequency)
 
         vDSP_destroy_fftsetup(fftSetup)
     }

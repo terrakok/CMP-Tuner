@@ -3,12 +3,11 @@ package org.jetbrains.tuner
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -17,10 +16,12 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.*
 import org.jetbrains.tuner.frequency.getMicFrequency
 import org.jetbrains.tuner.theme.AppTheme
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 
 private const val METER_ANGLE = 160
@@ -31,9 +32,11 @@ data class Tone(
 )
 
 sealed class Instrument {
+    abstract val name: String
     abstract val tones: List<Tone>
 
     data object ClassicGuitar : Instrument() {
+        override val name = "6-string guitar"
         override val tones: List<Tone> = listOf(
             Tone("E2", 82.41f),
             Tone("A2", 110.0f),
@@ -45,190 +48,35 @@ sealed class Instrument {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun App() = AppTheme {
-    var freq by remember { mutableFloatStateOf(0f) }
-    val instrument = Instrument.ClassicGuitar
-    var selectedTone by remember { mutableStateOf(instrument.tones.first()) }
-
-    LaunchedEffect(Unit) {
-        getMicFrequency().collect { freq = it }
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize().padding(8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier.fillMaxHeight().aspectRatio(0.7f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            val delta = remember(freq, selectedTone) {
-                val ideal = selectedTone.frequency
-                val d = freq - ideal
-                when {
-                    d in -80f..80f -> d
-                    d < -80f -> -80f
-                    else -> 80f
-                }
-            }
-            Freqometr(
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Tuner") }
+            )
+        },
+        content = { cotentPadding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(2f)
-                    .padding(vertical = 24.dp, horizontal = 8.dp),
-                delta = delta
-            )
-            Text(
-                text = when {
-                    delta in -5f..5f -> "Tuned!"
-                    delta < -5f -> "Low"
-                    else -> "High"
-                },
-                style = MaterialTheme.typography.displayMedium
-            )
-            val fText = freq.toString().split('.').let {
-                it.first() + "." + (it.getOrNull(1) ?: "0").take(2)
-            }
-            Text(text = "$fText Hz")
-            Row(
-                modifier = Modifier.fillMaxWidth()
+                    .fillMaxSize()
+                    .padding(cotentPadding)
+                    .consumeWindowInsets(WindowInsets.systemBars),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Instrument.ClassicGuitar.tones.forEach { tone ->
-                    val selected = selectedTone == tone
-                    Text(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .background(
-                                color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                                else MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = RoundedCornerShape(50)
-                            )
-                            .clickable { selectedTone = tone }
-                            .wrapContentHeight(),
-                        text = tone.name,
-                        color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                        else MaterialTheme.colorScheme.onTertiaryContainer,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
+
+                val frequency by getMicFrequency().collectAsState(0f)
+                val selectedInstrument = remember { Instrument.ClassicGuitar }
+                var selectedTone: Tone by remember { mutableStateOf(selectedInstrument.tones.first()) }
+                FrequencyMeterView(
+                    selectedTone = selectedTone,
+                    currentFrequency = frequency,
+                    modifier = Modifier.padding(8.dp).weight(1f)
+                )
+                InstrumentView(selectedInstrument, selectedTone, { selectedTone = it })
             }
         }
-    }
-}
-
-@Composable
-private fun Freqometr(
-    modifier: Modifier = Modifier,
-    delta: Float,
-    tickColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    val textMeasurer = rememberTextMeasurer()
-    Canvas(modifier) {
-        scale(
-            tickColor = tickColor,
-            textMeasurer = textMeasurer
-        )
-        arrow(
-            delta = delta,
-            arrowColor = tickColor
-        )
-    }
-}
-
-private fun DrawScope.scale(
-    tickColor: Color = Color.Black,
-    textMeasurer: TextMeasurer,
-    textStyle: TextStyle = TextStyle(color = tickColor.copy(0.5f))
-) {
-
-    val angle = METER_ANGLE
-    val tickNumber = 17
-    val radius = size.height
-    val scaleCenterX = center.x
-    val scaleCenterY = size.height
-
-    val tickWidth: Dp = 2.dp
-    val getTickHeight: (Int) -> Dp = {
-        if (it == 8) 12.dp else 4.dp
-    }
-    val getTickLabel: (Int) -> String = {
-        if (it % 2 == 1) ""
-        else (80 - it * 10).toString()
-    }
-    val labelRadius = radius + 24.dp.toPx()
-    val tickStepAngle = angle / (tickNumber - 1)
-    val rotation = 90 - (angle / 2f)
-
-    repeat(tickNumber) { tick ->
-        val tickHeight = getTickHeight(tick).toPx()
-        val tickAngle = tickStepAngle * tick
-        val stepsStartOffset = Offset(
-            x = scaleCenterX + (radius + tickHeight) * cos((tickAngle + rotation) * (PI / 180f)).toFloat(),
-            y = scaleCenterY - (radius + tickHeight) * sin((tickAngle + rotation) * (PI / 180)).toFloat()
-        )
-        val stepsEndOffset = Offset(
-            x = scaleCenterX + (radius - tickHeight) * cos((tickAngle + rotation) * (PI / 180)).toFloat(),
-            y = scaleCenterY - (radius - tickHeight) * sin((tickAngle + rotation) * (PI / 180)).toFloat()
-        )
-        drawLine(
-            color = tickColor,
-            start = stepsStartOffset,
-            end = stepsEndOffset,
-            strokeWidth = tickWidth.toPx(),
-            cap = StrokeCap.Round
-        )
-
-        val label = getTickLabel(tick)
-        if (label.isNotBlank()) {
-            val labelTextLayout = textMeasurer.measure(
-                text = label,
-                style = textStyle
-            )
-            val labelOffset = Offset(
-                x = scaleCenterX + labelRadius * cos((tickAngle + rotation) * (PI / 180)).toFloat(),
-                y = scaleCenterY - labelRadius * sin((tickAngle + rotation) * (PI / 180)).toFloat()
-            )
-            val labelTopLeft = Offset(
-                labelOffset.x - (labelTextLayout.size.width / 2f),
-                labelOffset.y - (labelTextLayout.size.height / 2f)
-            )
-
-            drawText(
-                textMeasurer = textMeasurer,
-                text = label,
-                topLeft = labelTopLeft,
-                style = textStyle
-            )
-        }
-    }
-}
-
-
-private fun DrawScope.arrow(
-    delta: Float,
-    arrowColor: Color = Color.Black,
-    arrowWidth: Dp = 2.dp
-) {
-    val radius = size.height
-    val scaleCenterX = center.x
-    val scaleCenterY = size.height
-    val rotation = 90
-
-    val start = Offset(scaleCenterX, scaleCenterY)
-    val end = Offset(
-        x = scaleCenterX + (radius * cos((-delta + rotation) * (PI / 180f))).toFloat(),
-        y = scaleCenterY - (radius * sin((-delta + rotation) * (PI / 180))).toFloat()
-    )
-    drawLine(
-        color = arrowColor,
-        start = start,
-        end = end,
-        strokeWidth = arrowWidth.toPx(),
-        cap = StrokeCap.Round
     )
 }
 
