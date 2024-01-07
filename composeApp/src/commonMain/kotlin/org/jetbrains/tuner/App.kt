@@ -1,28 +1,15 @@
 package org.jetbrains.tuner
 
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.text.*
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import org.jetbrains.tuner.frequency.getMicFrequency
 import org.jetbrains.tuner.theme.AppTheme
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.sin
 
 private const val METER_ANGLE = 160
 
@@ -65,8 +52,26 @@ internal fun App() = AppTheme {
                     .consumeWindowInsets(WindowInsets.systemBars),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                val frequency by getMicFrequency().collectAsState(0f)
+                var frequency by remember { mutableStateOf(0f) }
+                LaunchedEffect(Unit) {
+                    val stepTime = 500L
+                    val stepCount = 20
+                    val stepDelay = stepTime / stepCount
+                    getMicFrequency()
+                        .filter { it > 50 }
+                        .sample(stepTime)
+                        .runningFold(Pair(0f, 0f)) { acc, next ->
+                            Pair(acc.second, next)
+                        }
+                        .transform { (prev, next) ->
+                            val step = (next - prev) / stepCount
+                            for (i in 1..stepCount) {
+                                emit(prev + step * i)
+                                delay(stepDelay)
+                            }
+                        }
+                        .collect { frequency = it }
+                }
                 val selectedInstrument = remember { Instrument.ClassicGuitar }
                 var selectedTone: Tone by remember { mutableStateOf(selectedInstrument.tones.first()) }
                 FrequencyMeterView(

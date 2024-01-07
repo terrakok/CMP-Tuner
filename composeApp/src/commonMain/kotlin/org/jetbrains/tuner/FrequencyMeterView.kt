@@ -124,8 +124,12 @@ private fun FrequencyMeter(
         }
         val path = Path().apply {
             moveTo(
-                x = scaleCenterX + (radius - tickHeight) * cos(currentAngle * (PI / 180f)).toFloat(),
-                y = scaleCenterY - (radius - tickHeight) * sin(currentAngle * (PI / 180)).toFloat()
+                x = scaleCenterX + (radius - tickHeight) * cos((currentAngle-0.1f) * (PI / 180f)).toFloat(),
+                y = scaleCenterY - (radius - tickHeight) * sin((currentAngle-0.1f) * (PI / 180)).toFloat()
+            )
+            lineTo(
+                x = scaleCenterX + (radius - tickHeight) * cos((currentAngle+0.1f) * (PI / 180f)).toFloat(),
+                y = scaleCenterY - (radius - tickHeight) * sin((currentAngle+0.1f) * (PI / 180)).toFloat()
             )
             lineTo(
                 x = scaleCenterX + centerSpace * cos((currentAngle + centerSpaceAngle) * (PI / 180f)).toFloat(),
