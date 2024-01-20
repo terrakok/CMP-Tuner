@@ -1,12 +1,12 @@
 [versions]
 
-kotlin = "1.9.21"
+kotlin = "1.9.22"
 agp = "8.2.1"
-compose = "1.6.0-dev1357"
+compose = "1.6.0-dev1378"
 androidx-appcompat = "1.6.1"
 androidx-activityCompose = "1.8.2"
 napier = "2.7.1"
-kotlinx-coroutines = "1.7.3"
+kotlinx-coroutines = "1.8.0-RC2"
 tarsos-dsp = "2.5"
 accompanist-permissions = "0.33.2-alpha"
 materialKolor = "1.2.9"

@@ -24,11 +24,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
+import cmp_tuner.composeapp.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-private const val MATCH_DELTA = 5
+private const val MATCH_DELTA = 15
 
 @Composable
 internal fun FrequencyMeterView(
@@ -38,11 +40,11 @@ internal fun FrequencyMeterView(
 ) {
     val freqText = remember(currentFrequency) { currentFrequency.toLabel() }
     val toneText = remember(selectedTone) { selectedTone.frequency.toLabel() }
-    val freqLabel = remember(currentFrequency) {
-        if (currentFrequency < selectedTone.frequency - MATCH_DELTA) "Low"
-        else if (currentFrequency > selectedTone.frequency + MATCH_DELTA) "High"
-        else "Match"
-    }
+    val freqLabel =
+        if (currentFrequency < selectedTone.frequency - MATCH_DELTA) stringResource(Res.string.low)
+        else if (currentFrequency > selectedTone.frequency + MATCH_DELTA) stringResource(Res.string.high)
+        else stringResource(Res.string.match)
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally

@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun InstrumentView(
@@ -47,7 +48,7 @@ internal fun InstrumentView(
         ) {
             Text(
                 modifier = Modifier.padding(vertical = 8.dp),
-                text = instrument.name,
+                text = stringResource(instrument.name),
                 style = MaterialTheme.typography.titleLarge
             )
         }

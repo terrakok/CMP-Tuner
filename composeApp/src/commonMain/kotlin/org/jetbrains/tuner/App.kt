@@ -6,12 +6,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import cmp_tuner.composeapp.generated.resources.Res
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.tuner.frequency.getMicFrequency
 import org.jetbrains.tuner.theme.AppTheme
-
-private const val METER_ANGLE = 160
 
 data class Tone(
     val name: String,
@@ -19,11 +20,11 @@ data class Tone(
 )
 
 sealed class Instrument {
-    abstract val name: String
+    abstract val name: StringResource
     abstract val tones: List<Tone>
 
     data object ClassicGuitar : Instrument() {
-        override val name = "6-string guitar"
+        override val name = Res.string.classic_guitar
         override val tones: List<Tone> = listOf(
             Tone("E2", 82.41f),
             Tone("A2", 110.0f),
@@ -41,7 +42,7 @@ internal fun App() = AppTheme {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Tuner") }
+                title = { Text(stringResource(Res.string.app_name)) }
             )
         },
         content = { cotentPadding ->
