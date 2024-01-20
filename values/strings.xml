@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Tuner</string>
+    <string name="low">Low</string>
+    <string name="high">High</string>
+    <string name="match">Match</string>
+    <string name="classic_guitar">6-strings guitar</string>
+</resources>
