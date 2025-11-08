@@ -3,8 +3,7 @@ package com.github.terrakok.tuner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun InstrumentView(
@@ -30,30 +28,15 @@ internal fun InstrumentView(
     onToneClick: (Tone) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        verticalAlignment = Alignment.Bottom
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            instrument.tones.take(instrument.tones.size / 2).reversed().forEach { tone ->
-                val isSelected = remember(instrument, selectedTone) { selectedTone == tone }
-                ToneView(tone, isSelected, onToneClick)
-            }
-        }
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Text(
-                modifier = Modifier.padding(vertical = 8.dp),
-                text = stringResource(instrument.name),
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        Column {
-            instrument.tones.takeLast(instrument.tones.size / 2).forEach { tone ->
-                val isSelected = remember(instrument, selectedTone) { selectedTone == tone }
-                ToneView(tone, isSelected, onToneClick)
-            }
+        instrument.tones.forEach { tone ->
+            val isSelected = remember(instrument, selectedTone) { selectedTone == tone }
+            ToneView(tone, isSelected, onToneClick)
         }
     }
 }
@@ -81,9 +64,9 @@ private fun ToneView(
             .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
             .clickable { onToneClick(tone) }
             .background(bgColor)
-            .size(60.dp)
+            .size(56.dp)
             .wrapContentHeight(),
-        text = tone.name,
+        text = tone.name.replace(Regex("\\d"), ""),
         style = MaterialTheme.typography.titleLarge,
         color = color,
         textAlign = TextAlign.Center

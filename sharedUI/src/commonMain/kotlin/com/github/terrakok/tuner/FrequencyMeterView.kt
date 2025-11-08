@@ -1,25 +1,16 @@
 package com.github.terrakok.tuner
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.stringResource
-import tuner.sharedui.generated.resources.Res
-import tuner.sharedui.generated.resources.high
-import tuner.sharedui.generated.resources.low
-import tuner.sharedui.generated.resources.match
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -32,36 +23,11 @@ internal fun FrequencyMeterView(
     currentFrequency: Float,
     modifier: Modifier = Modifier
 ) {
-    val freqText = remember(currentFrequency) { currentFrequency.toLabel() }
-    val toneText = remember(selectedTone) { selectedTone.frequency.toLabel() }
-    val freqLabel =
-        if (currentFrequency < selectedTone.frequency - MATCH_DELTA) stringResource(Res.string.low)
-        else if (currentFrequency > selectedTone.frequency + MATCH_DELTA) stringResource(Res.string.high)
-        else stringResource(Res.string.match)
-
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = toneText,
-            style = MaterialTheme.typography.labelMedium
-        )
-        FrequencyMeter(
-            selectedTone.frequency,
-            currentFrequency,
-            modifier = Modifier.fillMaxWidth().weight(1f)
-        )
-        Text(
-            text = freqLabel,
-            style = MaterialTheme.typography.displaySmall
-        )
-        Text(
-            text = freqText,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-        )
-    }
+    FrequencyMeter(
+        baseValue = selectedTone.frequency,
+        currentValue = currentFrequency,
+        modifier = modifier.fillMaxWidth()
+    )
 }
 
 @Composable
@@ -70,47 +36,73 @@ private fun FrequencyMeter(
     currentValue: Float,
     modifier: Modifier = Modifier
 ) {
-    val tickNumber = 17
-    val scaleAngle = 140f
+    val tickNumber = 21
+    val scaleAngle = 70f
     val startRotation = 90f - (scaleAngle / 2)
     val minValue = baseValue - (5 * MATCH_DELTA / 2)
     val maxValue = baseValue + (5 * MATCH_DELTA / 2)
-    val tickColor = MaterialTheme.colorScheme.onSurface
-    val arrowColor = Color.Green
+    val tickColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    val arrowColor = Color(0xFFB00020) // red
+    val centerAccent = MaterialTheme.colorScheme.primary
+    val centerOuter = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    val centerInner = MaterialTheme.colorScheme.surface
 
     Canvas(modifier) {
-        val scalePadding = 4.dp.toPx()
-        val tickHeight = 8.dp.toPx()
-        val centerSpace = 30.dp.toPx()
-        val centerSpaceAngle = 10f
-        val tickWidth = 1.dp.toPx()
+        val scalePadding = 8.dp.toPx()
+        val tickHeight = 10.dp.toPx()
         val originSize = size
-        val size = originSize.selectBestSize(aspectRatio = 2.0f)
-        val radius = (size.width / 2) - scalePadding
+        val size = originSize.selectBestSize(aspectRatio = 0.8f)
+        val chord = size.width - 2 * scalePadding
+        val radius = chord / (2f * sin((scaleAngle / 2f) * (PI / 180f))).toFloat()
         val scaleCenterX = originSize.width / 2
-        val scaleCenterY = (originSize.height + size.height) / 2
+        val scaleCenterY = (originSize.height + radius) / 2
 
-        //scale
+        // scale ticks
         repeat(tickNumber) { tick ->
             val tickAngle = (scaleAngle / (tickNumber - 1)) * tick
-            val stepsStartOffset = Offset(
+            val isCenter = tick == (tickNumber - 1) / 2
+            val isCenterAccent = isCenter
+            val height = if (isCenterAccent) tickHeight * 1.8f else tickHeight
+            val width = if (isCenterAccent) 2.dp.toPx() else 1.dp.toPx()
+            val color = if (isCenterAccent) centerAccent else tickColor
+            val start = Offset(
                 x = scaleCenterX + radius * cos((tickAngle + startRotation) * (PI / 180f)).toFloat(),
                 y = scaleCenterY - radius * sin((tickAngle + startRotation) * (PI / 180)).toFloat()
             )
-            val stepsEndOffset = Offset(
-                x = scaleCenterX + (radius - tickHeight) * cos((tickAngle + startRotation) * (PI / 180)).toFloat(),
-                y = scaleCenterY - (radius - tickHeight) * sin((tickAngle + startRotation) * (PI / 180)).toFloat()
+            val end = Offset(
+                x = scaleCenterX + (radius - height) * cos((tickAngle + startRotation) * (PI / 180)).toFloat(),
+                y = scaleCenterY - (radius - height) * sin((tickAngle + startRotation) * (PI / 180)).toFloat()
             )
             drawLine(
-                color = tickColor,
-                start = stepsStartOffset,
-                end = stepsEndOffset,
-                strokeWidth = tickWidth,
+                color = color,
+                start = start,
+                end = end,
+                strokeWidth = width,
+                cap = StrokeCap.Round
+            )
+        }
+        // add a second thin center accent tick next to the center
+        val centerTickAngle = (scaleAngle / (tickNumber - 1)) * ((tickNumber - 1) / 2)
+        val offsetAngle = 1f
+        listOf(centerTickAngle - offsetAngle, centerTickAngle + offsetAngle).forEach { angle ->
+            val start = Offset(
+                x = scaleCenterX + radius * cos((angle + startRotation) * (PI / 180f)).toFloat(),
+                y = scaleCenterY - radius * sin((angle + startRotation) * (PI / 180)).toFloat()
+            )
+            val end = Offset(
+                x = scaleCenterX + (radius - tickHeight * 1.4f) * cos((angle + startRotation) * (PI / 180)).toFloat(),
+                y = scaleCenterY - (radius - tickHeight * 1.4f) * sin((angle + startRotation) * (PI / 180)).toFloat()
+            )
+            drawLine(
+                color = centerAccent,
+                start = start,
+                end = end,
+                strokeWidth = 2.dp.toPx(),
                 cap = StrokeCap.Round
             )
         }
 
-        //arrow
+        // needle
         val currentAngle = if (currentValue >= maxValue) {
             startRotation
         } else if (currentValue <= minValue) {
@@ -118,26 +110,33 @@ private fun FrequencyMeter(
         } else {
             ((maxValue - currentValue) * scaleAngle / (maxValue - minValue)) + startRotation
         }
-        val path = Path().apply {
-            moveTo(
-                x = scaleCenterX + (radius - tickHeight) * cos((currentAngle-0.1f) * (PI / 180f)).toFloat(),
-                y = scaleCenterY - (radius - tickHeight) * sin((currentAngle-0.1f) * (PI / 180)).toFloat()
-            )
-            lineTo(
-                x = scaleCenterX + (radius - tickHeight) * cos((currentAngle+0.1f) * (PI / 180f)).toFloat(),
-                y = scaleCenterY - (radius - tickHeight) * sin((currentAngle+0.1f) * (PI / 180)).toFloat()
-            )
-            lineTo(
-                x = scaleCenterX + centerSpace * cos((currentAngle + centerSpaceAngle) * (PI / 180f)).toFloat(),
-                y = scaleCenterY - centerSpace * sin((currentAngle + centerSpaceAngle) * (PI / 180)).toFloat()
-            )
-            lineTo(
-                x = scaleCenterX + centerSpace * cos((currentAngle - centerSpaceAngle) * (PI / 180f)).toFloat(),
-                y = scaleCenterY - centerSpace * sin((currentAngle - centerSpaceAngle) * (PI / 180)).toFloat()
-            )
-            close()
-        }
-        drawPath(path, arrowColor)
+        val innerRadius = 12.dp.toPx()
+        val needleStart = Offset(
+            x = scaleCenterX + innerRadius * cos((currentAngle) * (PI / 180f)).toFloat(),
+            y = scaleCenterY - innerRadius * sin((currentAngle) * (PI / 180)).toFloat()
+        )
+        val needleEnd = Offset(
+            x = scaleCenterX + (radius - tickHeight) * cos((currentAngle) * (PI / 180f)).toFloat(),
+            y = scaleCenterY - (radius - tickHeight) * sin((currentAngle) * (PI / 180)).toFloat()
+        )
+        drawLine(
+            color = arrowColor,
+            start = needleStart,
+            end = needleEnd,
+            strokeWidth = 3.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+        // center knob
+        drawCircle(
+            color = centerOuter,
+            radius = innerRadius,
+            center = Offset(scaleCenterX, scaleCenterY)
+        )
+        drawCircle(
+            color = centerInner,
+            radius = innerRadius * 0.6f,
+            center = Offset(scaleCenterX, scaleCenterY)
+        )
     }
 }
 
@@ -147,16 +146,3 @@ private fun Size.selectBestSize(aspectRatio: Float) =
     } else {
         copy(width = height * aspectRatio)
     }
-
-private fun Float.toLabel(): String {
-    val splitted = this.toString().split('.')
-    val a = splitted[0]
-    val b = if (splitted.size > 1) {
-        splitted[1].take(2).let {
-            if (it.length == 1) "${it}0" else it.take(2)
-        }
-    } else {
-        "00"
-    }
-    return "$a.$b Hz"
-}
