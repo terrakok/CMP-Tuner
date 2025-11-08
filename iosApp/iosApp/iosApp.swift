@@ -1,26 +1,21 @@
-import UIKit
 import SwiftUI
-import ComposeApp
+import SharedUI
 
 @main
-struct iosApp: App {
+struct ComposeApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView().ignoresSafeArea(.all)
         }
     }
 }
 
-struct ContentView: View {
-    var body: some View {
-        ComposeView().ignoresSafeArea(.all)
-    }
-}
-
-struct ComposeView: UIViewControllerRepresentable {
+struct ContentView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainKt.MainViewController()
+        return MainKt.MainViewController()
     }
 
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        // Updates will be handled by Compose
+    }
 }

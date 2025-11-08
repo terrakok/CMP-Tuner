@@ -2,6 +2,7 @@
 *.iml
 .gradle
 .idea
+.kotlin
 .DS_Store
 build
 */build
@@ -12,4 +13,5 @@ local.properties
 xcuserdata/
 Pods/
 *.jks
+*.gpg
 *yarn.lock
